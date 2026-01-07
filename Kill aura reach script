@@ -1,0 +1,376 @@
+-- Made by 3kuzbleed
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local VirtualUser = game:GetService("VirtualUser")
+local UserInputService = game:GetService("UserInputService")
+local SoundService = game:GetService("SoundService")
+local Lighting = game:GetService("Lighting")
+
+-- Configuration
+local Settings = {
+    KillAura = true,
+    Reach = 10,
+    AutoSwing = true,
+    Visualizer = false,
+    TeamCheck = true,
+    LowGFX = false,
+    FullBright = false,
+    RGB = true
+}
+
+-- Visualizer System
+local VisualizerPart = Instance.new("Part")
+VisualizerPart.Name = "ReachVisualizer"
+VisualizerPart.Shape = Enum.PartType.Ball
+VisualizerPart.Material = Enum.Material.ForceField
+VisualizerPart.Color = Color3.fromRGB(255, 0, 0)
+VisualizerPart.Transparency = 0.5
+VisualizerPart.CanCollide = false
+VisualizerPart.Anchored = true
+VisualizerPart.Parent = nil
+
+-- Sound System
+local function playSound(id)
+    local s = Instance.new("Sound")
+    s.SoundId = "rbxassetid://" .. tostring(id)
+    s.Volume = 1
+    s.Parent = SoundService
+    s:Play()
+    s.Ended:Connect(function() s:Destroy() end)
+end
+
+-- GUI Creation
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "3kuzbleedV14"
+ScreenGui.Parent = CoreGui
+ScreenGui.ResetOnSpawn = false
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "Main"
+MainFrame.Size = UDim2.new(0, 600, 0, 380)
+MainFrame.Position = UDim2.new(0.5, -300, 0.5, -190)
+MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+local BackgroundImage = Instance.new("ImageLabel")
+BackgroundImage.Name = "Background"
+BackgroundImage.Size = UDim2.new(1, 0, 1, 0)
+BackgroundImage.Image = "rbxassetid://1767753685265"
+BackgroundImage.ScaleType = Enum.ScaleType.Crop
+BackgroundImage.ImageTransparency = 0.8
+BackgroundImage.BackgroundTransparency = 1
+BackgroundImage.Parent = MainFrame
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 15)
+UICorner.Parent = MainFrame
+
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Thickness = 3
+UIStroke.Color = Color3.fromRGB(255, 0, 0)
+UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+UIStroke.Parent = MainFrame
+
+local TopBar = Instance.new("Frame")
+TopBar.Name = "TopBar"
+TopBar.Size = UDim2.new(1, 0, 0, 40)
+TopBar.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
+TopBar.BackgroundTransparency = 0.3
+TopBar.BorderSizePixel = 0
+TopBar.Parent = MainFrame
+
+local TopBarCorner = Instance.new("UICorner")
+TopBarCorner.CornerRadius = UDim.new(0, 15)
+TopBarCorner.Parent = TopBar
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(1, -20, 1, 0)
+TitleLabel.Position = UDim2.new(0, 15, 0, 0)
+TitleLabel.Text = "3KUZ HUB - PREMIUM EXECUTOR GUI"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.Font = Enum.Font.GothamBlack
+TitleLabel.TextSize = 16
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Parent = TopBar
+
+local Sidebar = Instance.new("Frame")
+Sidebar.Name = "Sidebar"
+Sidebar.Size = UDim2.new(0, 160, 1, -40)
+Sidebar.Position = UDim2.new(0, 0, 0, 40)
+Sidebar.BackgroundColor3 = Color3.fromRGB(7, 7, 7)
+Sidebar.BackgroundTransparency = 0.2
+Sidebar.BorderSizePixel = 0
+Sidebar.Parent = MainFrame
+
+local SidebarLine = Instance.new("Frame")
+SidebarLine.Size = UDim2.new(0, 2, 1, -20)
+SidebarLine.Position = UDim2.new(1, -2, 0, 10)
+SidebarLine.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+SidebarLine.BorderSizePixel = 0
+SidebarLine.Parent = Sidebar
+
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Name = "Content"
+ContentFrame.Size = UDim2.new(1, -180, 1, -60)
+ContentFrame.Position = UDim2.new(0, 170, 0, 50)
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.Parent = MainFrame
+
+local Pages = {}
+local function createPage(name)
+    local page = Instance.new("ScrollingFrame")
+    page.Name = name
+    page.Size = UDim2.new(1, 0, 1, 0)
+    page.BackgroundTransparency = 1
+    page.Visible = false
+    page.ScrollBarThickness = 0
+    page.Parent = ContentFrame
+    Pages[name] = page
+    return page
+end
+
+local combatPage = createPage("Combat")
+local settingsPage = createPage("Settings")
+
+local function showPage(name)
+    for _, p in pairs(Pages) do p.Visible = false end
+    Pages[name].Visible = true
+end
+
+local function createTab(name, yPos)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -20, 0, 45)
+    btn.Position = UDim2.new(0, 10, 0, yPos)
+    btn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    btn.BackgroundTransparency = 0.5
+    btn.Text = name
+    btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 14
+    btn.Parent = Sidebar
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+    
+    btn.MouseButton1Click:Connect(function()
+        playSound(12222242)
+        showPage(name)
+    end)
+end
+
+createTab("Combat", 20)
+createTab("Settings", 75)
+showPage("Combat")
+
+local toggles = {}
+local function createToggle(name, parent, default, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -5, 0, 55)
+    btn.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    btn.BackgroundTransparency = 0.3
+    btn.Text = "    " .. name
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 15
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    btn.Parent = parent
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
+
+    local statusLabel = Instance.new("TextLabel")
+    statusLabel.Size = UDim2.new(0, 100, 1, 0)
+    statusLabel.Position = UDim2.new(1, -110, 0, 0)
+    statusLabel.Text = default and "ENABLED" or "DISABLED"
+    statusLabel.TextColor3 = default and Color3.fromRGB(0, 255, 127) or Color3.fromRGB(255, 60, 60)
+    statusLabel.Font = Enum.Font.GothamBlack
+    statusLabel.TextSize = 13
+    statusLabel.BackgroundTransparency = 1
+    statusLabel.Parent = btn
+
+    local state = default
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        statusLabel.Text = state and "ENABLED" or "DISABLED"
+        statusLabel.TextColor3 = state and Color3.fromRGB(0, 255, 127) or Color3.fromRGB(255, 60, 60)
+        playSound(12222242)
+        callback(state)
+    end)
+    
+    table.insert(toggles, {btn = btn, status = statusLabel})
+    local list = parent:FindFirstChildOfClass("UIListLayout") or Instance.new("UIListLayout", parent)
+    list.Padding = UDim.new(0, 12)
+end
+
+-- Synchronized Rainbow Effect
+RunService.RenderStepped:Connect(function()
+    local t = tick()
+    local rainbowColor = Color3.fromHSV((t * 0.35) % 1, 0.8, 1)
+    
+    if Settings.RGB then
+        UIStroke.Color = rainbowColor
+        SidebarLine.BackgroundColor3 = rainbowColor
+        TitleLabel.TextColor3 = rainbowColor
+        for _, item in ipairs(toggles) do
+            local stroke = item.btn:FindFirstChild("UIStroke") or Instance.new("UIStroke", item.btn)
+            stroke.Color = rainbowColor
+            stroke.Thickness = 1.5
+            stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+            stroke.Transparency = 0.3
+        end
+    else
+        UIStroke.Color = Color3.fromRGB(255, 0, 0)
+        SidebarLine.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        for _, item in ipairs(toggles) do
+            if item.btn:FindFirstChild("UIStroke") then item.btn.UIStroke:Destroy() end
+        end
+    end
+end)
+
+-- Combat Tab
+createToggle("Kill Aura", combatPage, Settings.KillAura, function(v) Settings.KillAura = v end)
+createToggle("Auto Swing", combatPage, Settings.AutoSwing, function(v) Settings.AutoSwing = v end)
+createToggle("Visualizer", combatPage, Settings.Visualizer, function(v) 
+    Settings.Visualizer = v 
+    VisualizerPart.Parent = v and workspace or nil
+end)
+
+-- Reach Slider
+local sliderContainer = Instance.new("Frame")
+sliderContainer.Size = UDim2.new(1, -5, 0, 95)
+sliderContainer.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+sliderContainer.BackgroundTransparency = 0.3
+sliderContainer.Parent = combatPage
+Instance.new("UICorner", sliderContainer).CornerRadius = UDim.new(0, 10)
+
+local ReachLabel = Instance.new("TextLabel")
+ReachLabel.Size = UDim2.new(1, -20, 0, 40)
+ReachLabel.Position = UDim2.new(0, 10, 0, 0)
+ReachLabel.Text = "REACH DISTANCE: " .. Settings.Reach .. " STUDS"
+ReachLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+ReachLabel.Font = Enum.Font.GothamBlack
+ReachLabel.TextSize = 14
+ReachLabel.BackgroundTransparency = 1
+ReachLabel.Parent = sliderContainer
+
+local SliderBG = Instance.new("Frame")
+SliderBG.Size = UDim2.new(1, -40, 0, 8)
+SliderBG.Position = UDim2.new(0, 20, 0, 55)
+SliderBG.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+SliderBG.Parent = sliderContainer
+Instance.new("UICorner", SliderBG).CornerRadius = UDim.new(0, 4)
+
+local SliderFill = Instance.new("Frame")
+SliderFill.Size = UDim2.new(Settings.Reach/50, 0, 1, 0)
+SliderFill.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+SliderFill.Parent = SliderBG
+Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(0, 4)
+
+local SliderBtn = Instance.new("TextButton")
+SliderBtn.Size = UDim2.new(0, 24, 0, 24)
+SliderBtn.Position = UDim2.new(Settings.Reach/50, -12, 0.5, -12)
+SliderBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+SliderBtn.Text = ""
+SliderBtn.Parent = SliderBG
+Instance.new("UICorner", SliderBtn).CornerRadius = UDim.new(1, 0)
+
+local dragging = false
+SliderBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = true end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
+end)
+
+RunService.Heartbeat:Connect(function()
+    if dragging then
+        local mousePos = UserInputService:GetMouseLocation().X
+        local sliderPos = SliderBG.AbsolutePosition.X
+        local sliderWidth = SliderBG.AbsoluteSize.X
+        local percent = math.clamp((mousePos - sliderPos) / sliderWidth, 0, 1)
+        Settings.Reach = math.floor(percent * 50)
+        ReachLabel.Text = "REACH DISTANCE: " .. Settings.Reach .. " STUDS"
+        SliderFill.Size = UDim2.new(percent, 0, 1, 0)
+        SliderBtn.Position = UDim2.new(percent, -12, 0.5, -12)
+        SliderFill.BackgroundColor3 = UIStroke.Color
+    end
+end)
+
+-- Settings Tab
+createToggle("Team Check", settingsPage, Settings.TeamCheck, function(v) Settings.TeamCheck = v end)
+createToggle("RGB Effect", settingsPage, Settings.RGB, function(v) Settings.RGB = v end)
+createToggle("Low GFX", settingsPage, Settings.LowGFX, function(v)
+    Settings.LowGFX = v
+    for _, part in pairs(workspace:GetDescendants()) do
+        if part:IsA("BasePart") and v then part.Material = Enum.Material.SmoothPlastic end
+    end
+end)
+createToggle("Full Bright", settingsPage, Settings.FullBright, function(v)
+    Settings.FullBright = v
+    if v then Lighting.Ambient = Color3.fromRGB(255, 255, 255) Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255) Lighting.Brightness = 2
+    else Lighting.Ambient = Color3.fromRGB(127, 127, 127) Lighting.OutdoorAmbient = Color3.fromRGB(127, 127, 127) Lighting.Brightness = 1 end
+end)
+
+local Credit = Instance.new("TextLabel")
+Credit.Size = UDim2.new(0, 250, 0, 20)
+Credit.Position = UDim2.new(1, -260, 1, -25)
+Credit.Text = "OWNED BY 3KUZBLEED ON DISCORD"
+Credit.TextColor3 = Color3.fromRGB(100, 100, 100)
+Credit.BackgroundTransparency = 1
+Credit.Font = Enum.Font.GothamBlack
+Credit.TextSize = 12
+Credit.Parent = MainFrame
+
+-- Logic
+local function getClosestPlayer()
+    local closest, minDist = nil, Settings.Reach
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            if player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
+                if not (Settings.TeamCheck and player.Team == LocalPlayer.Team) then
+                    local dist = (LocalPlayer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+                    if dist < minDist then minDist = dist closest = player end
+                end
+            end
+        end
+    end return closest
+end
+
+local function applyReach()
+    if not LocalPlayer.Character then return end
+    local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+    if tool then
+        for _, part in pairs(tool:GetDescendants()) do
+            if part:IsA("BasePart") then
+                if not part:FindFirstChild("OriginalSize") then
+                    local v = Instance.new("Vector3Value", part) v.Name = "OriginalSize" v.Value = part.Size
+                end
+                if Settings.KillAura then
+                    part.Size = Vector3.new(Settings.Reach, Settings.Reach, Settings.Reach)
+                    part.Massless = true part.CanCollide = false
+                else part.Size = part.OriginalSize.Value end
+            end
+        end
+    end
+end
+
+RunService.RenderStepped:Connect(function()
+    if Settings.AutoSwing and LocalPlayer.Character then
+        local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+        if tool then tool:Activate() VirtualUser:CaptureController() VirtualUser:ClickButton1(Vector2.new(0,0)) end
+    end
+    applyReach()
+    if Settings.Visualizer and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        VisualizerPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
+        VisualizerPart.Size = Vector3.new(Settings.Reach*2, Settings.Reach*2, Settings.Reach*2)
+        VisualizerPart.Color = UIStroke.Color
+    end
+    if Settings.KillAura then
+        local target = getClosestPlayer()
+        if target then LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(LocalPlayer.Character.HumanoidRootPart.Position, target.Character.HumanoidRootPart.Position) end
+    end
+end)
+playSound(12222242)
